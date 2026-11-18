@@ -1,7 +1,35 @@
-*.pyc
+# Python bytecode and caches
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
 .venv/
 env/
 venv/
-*.cpython-310.pyc
+
+# Test, lint, type-check, and coverage output
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Packaging output
+build/
+dist/
+*.egg-info/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Runtime output
+*.log
+log.txt
+
+# Generated documentation
+docs/
+
+# Local model weights
 modules/vision/models/best.pt

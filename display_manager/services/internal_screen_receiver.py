@@ -3,7 +3,7 @@ import os
 import time
 import sys
 import tkinter      as tk
-# allow import from parent directory for socket_manager
+# Allow import from parent directory for socket_manager
 sys.path.append("..")
 import socket_manager
 

@@ -1,7 +1,7 @@
 [project]
 name = "robosub-software-2026"
 version = "0.0.1"
-description = "fork of the award winnning 2025 software repo!"
+description = "Fork of the award-winning 2025 software repository."
 authors = [
     {name = "Kai Chan"},
     {name = "Ryan Sundermeyer"},
@@ -27,17 +27,13 @@ dependencies = [
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[docs]
-dependencies = [
+[project.optional-dependencies]
+docs = [
     "pdoc3==0.11.1",
 ]
-
-[non-orin-dependencies]
-dependencies = [
+non-orin = [
     "opencv-python==4.9.0.80",
     "numpy==1.24.3",
     "torch==2.4.1",
     "torchvision==0.19.1"
 ]
-
-    
