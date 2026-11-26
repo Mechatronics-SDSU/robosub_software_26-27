@@ -67,7 +67,8 @@ class FSM_Template:
         """
         Returns true if near a location in terms of x and y (requires x,y, buffers and dvl to work)
         """
-        if abs(self.shared_memory_object.dvl_x.value - x) <= self.x_buffer and abs(self.shared_memory_object.dvl_y.value - y) <= self.y_buffer:
+        current_x, current_y, _ = self.navigation_position()
+        if abs(current_x - x) <= self.x_buffer and abs(current_y - y) <= self.y_buffer:
             return True
         # else
         return False
@@ -76,10 +77,27 @@ class FSM_Template:
         """
         Returns true if near a location (requires x,y,z buffers and dvl to work)
         """
-        if abs(self.shared_memory_object.dvl_x.value - x) <= self.x_buffer and abs(self.shared_memory_object.dvl_y.value - y) <= self.y_buffer and abs(self.shared_memory_object.dvl_z.value - z) <= self.z_buffer:
+        current_x, current_y, current_z = self.navigation_position()
+        if abs(current_x - x) <= self.x_buffer and abs(current_y - y) <= self.y_buffer and abs(current_z - z) <= self.z_buffer:
             return True
         # else
         return False
+
+    def navigation_position(self) -> tuple[float, float, float]:
+        """Return the mission position from the active navigation source.
+
+        The raw DVL position remains the fallback until the estimator has
+        published a valid coherent snapshot.
+        """
+        if (self.shared_memory_object.use_estimated_state.value and
+                self.shared_memory_object.estimated_state_valid.value):
+            with self.shared_memory_object.estimated_state_lock:
+                return tuple(self.shared_memory_object.estimated_position[:])
+        return (
+            self.shared_memory_object.dvl_x.value,
+            self.shared_memory_object.dvl_y.value,
+            self.shared_memory_object.dvl_z.value,
+        )
     
     def display(self, r: int, g: int, b: int) -> None:
         """
@@ -88,7 +106,8 @@ class FSM_Template:
 
         if time.time() - self.last_display_command <= DISPLAY_TIMER:
             return
-        tgt_txt = f"DVL: \t x = {round(self.shared_memory_object.dvl_x.value,2)}\t y = {round(self.shared_memory_object.dvl_y.value,2)}\t z = {round(self.shared_memory_object.dvl_z.value,2)}"
+        nav_x, nav_y, nav_z = self.navigation_position()
+        tgt_txt = f"NAV: \t x = {round(nav_x,2)}\t y = {round(nav_y,2)}\t z = {round(nav_z,2)}"
         dvl_txt = f"TGT: \t x = {round(self.shared_memory_object.target_x.value,2)}\t y = {round(self.shared_memory_object.target_y.value,2)}\t z = {round(self.shared_memory_object.target_z.value,2)}"
         if not self.display_on: # don't run display if display set to off
             # TODO: Uncomment (Zaid)

@@ -66,6 +66,7 @@ if ENABLE_NAVIGATION_ESTIMATOR:
     trax_object = Trax_Interface(shared_memory_object)
     estimator_object = EstimatorInterface(shared_memory_object)
     pid_object.use_estimated_state = True
+    shared_memory_object.use_estimated_state.value = True
     gate_modules.extend([depth_object, trax_object, estimator_object])
 gate_mode   = Gate_FSM(shared_memory_object, gate_modules)
 

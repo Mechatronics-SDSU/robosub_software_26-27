@@ -46,6 +46,7 @@ class SharedMemoryWrapper:
         self.estimated_state_timestamp = Value('d', 0)
         self.estimated_state_valid  = Value('b', False)
         self.estimated_covariance_trace = Value('d', 0)
+        self.use_estimated_state    = Value('b', False)
         self.running                = Value('i', 1)
         self.x_hard_deadzone        = Value('i', 0) # TESTME
 
