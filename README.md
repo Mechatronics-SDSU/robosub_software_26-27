@@ -83,6 +83,17 @@ This container intentionally does not expose hardware devices. Hardware
 passthrough and the JetPack/ZED runtime should be added as a separate deployment
 configuration after the software estimator is validated with replay data.
 
+To replay recorded ESKF sensor data inside the container:
+
+```bash
+docker compose run --rm robosub-dev \
+  python tools/replay_eskf.py recordings/sensors.csv recordings/estimated.csv
+```
+
+Replay input is CSV with timestamped TRAX2 acceleration/gyro/attitude, DVL
+velocity, depth, and optional DVL position columns. The output contains the
+estimated position, velocity, attitude, covariance trace, and validity flag.
+
 ### Notes
 
 - Modes: The process of completing a single objective in the pool
