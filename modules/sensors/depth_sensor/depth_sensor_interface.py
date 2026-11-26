@@ -1,5 +1,6 @@
 from modules.sensors.depth_sensor.depth_sensor import DepthSensor
 from multiprocessing import Value
+import time
 
 class DepthSensorInterface:
     def __init__(self, shared_memory_object):
@@ -13,6 +14,8 @@ class DepthSensorInterface:
                 depth = depth.split()[1]
                 print(depth)
                 self.shared_memory_object.depth.value = float(depth)
+                self.shared_memory_object.depth_timestamp.value = time.monotonic()
+                self.shared_memory_object.depth_data_valid.value = True
 
     def print_data(self) -> None:
         print(self.shared_memory_object.depth.value)

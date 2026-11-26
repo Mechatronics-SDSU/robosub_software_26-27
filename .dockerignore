@@ -1,0 +1,16 @@
+.git
+.gitignore
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+models
+recordings
+data
+*.svo
+*.mp4
+*.ipynb
+Dockerfile*
+docker-compose*.yml

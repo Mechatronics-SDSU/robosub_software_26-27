@@ -20,22 +20,13 @@ class Trax_Interface(TRAX):
         self.shared_memory_object = shared_memory_object
         self.interval: float = 0
         self.acq_params: tuple = (False, False, 0, self.interval) # poll mode false, flush filter false, PNI reserved, interval
-        self.data_components: tuple = (6, 0x15, 0x16, 0x17, 0x5, 0x18, 0x19) # 6 comp's: ax ay az yaw pitch roll
+        # Acceleration is in g, angular velocity is in degrees/sec, and
+        # attitude is in degrees according to the TRAX component protocol.
+        self.data_components: tuple = (
+            9, 0x15, 0x16, 0x17, 0x4A, 0x4B, 0x4C, 0x05, 0x18, 0x19
+        )
 
         # positional values
-        self.t_prev:    float = time.time()
-        self.vel_x:     float = 0
-        self.vel_y:     float = 0
-        self.vel_z:     float = 0
-        self.pos_x:     float = 0
-        self.pos_y:     float = 0
-        self.pos_z:     float = 0
-        
-        # bias compensation
-        self.accel_x_bias:  float = 0
-        self.accel_y_bias:  float = 0
-        self.accel_z_bias:  float = 0
-        self.threshold:     float = 0.1
     
     def setup(self) -> None:
         """
@@ -56,6 +47,12 @@ class Trax_Interface(TRAX):
         """
         #self.setup() # only run once ever
         self.connect()
+        # Apply the runtime stream configuration on every launch.  This keeps
+        # the estimator independent of whatever component list was last saved
+        # in the TRAX's non-volatile settings.
+        self.send_packet("kStopContinuousMode")
+        self.send_packet("kSetAcqParams", self.acq_params)
+        self.send_packet("kSetDataComponents", self.data_components)
         self.send_packet("kStartContinuousMode") # kStartContinuousMode - start continuous mode
         while self.shared_memory_object.running.value:
             self.update()
@@ -83,43 +80,28 @@ class Trax_Interface(TRAX):
         """
         Function targeted by looping multiprocessing calls, called only once
         """
-        t:  float = time.time()
-        dt: float = t - self.t_prev
-        self.t_prev = t
+        timestamp = time.monotonic()
         try:
             # READ DATA
             data:       tuple = self.recv_packet(self.data_components)
-            accel_x:    float = data[4]
-            accel_y:    float = data[6]
-            accel_z:    float = data[8]
-            yaw:        float = data[10]
-            pitch:      float = data[12]
-            roll:       float = data[14]
-            
-            #accel_x, accel_y, accel_z = self.adjust_accel(accel_x, accel_y, accel_z, yaw, pitch, roll)
-            
-            self.shared_memory_object.trax_yaw.value   = yaw
-            self.shared_memory_object.trax_pitch.value = pitch
-            self.shared_memory_object.trax_roll.value  = roll
-            
-            # integrate velocity and position
-            dx: float = accel_x if abs(accel_x) > self.threshold else 0
-            dy: float = accel_y if abs(accel_y) > self.threshold else 0
-            dz: float = accel_z if abs(accel_z) > self.threshold else 0
-            
-            # accumulate velocity
-            self.vel_x += dx * dt
-            self.vel_y += dy * dt
-            self.vel_z += dz * dt
-            
-            # update position
-            self.pos_x += self.vel_x * dt
-            self.pos_y += self.vel_y * dt
-            self.pos_z += self.vel_z * dt
+            components = {data[index]: data[index + 1] for index in range(3, len(data) - 2, 2)}
+            accel = np.array([components[0x15], components[0x16], components[0x17]]) * G_TO_MS2
+            gyro = np.radians(np.array([components[0x4A], components[0x4B], components[0x4C]]))
+            yaw = components[0x05]
+            pitch = components[0x18]
+            roll = components[0x19]
 
-            print(f"TRAX x: {self.pos_x:.2f}, y: {self.pos_y:.2f}, z: {self.pos_z:.2f}, Yaw: {yaw:.2f}, Pitch: {pitch:.2f}, Roll: {roll:.2f}, X Accel: {accel_x:.2f}, Y Accel: {accel_y:.2f}, Z Accel: {accel_z:.2f}")
+            self.shared_memory_object.trax_yaw.value = yaw
+            self.shared_memory_object.trax_pitch.value = pitch
+            self.shared_memory_object.trax_roll.value = roll
+            self.shared_memory_object.imu_lin_acc[:] = accel
+            self.shared_memory_object.imu_ang_vel[:] = gyro
+            self.shared_memory_object.imu_orientation[:] = (yaw, pitch, roll)
+            self.shared_memory_object.trax_timestamp.value = timestamp
+            self.shared_memory_object.trax_data_valid.value = True
         except KeyboardInterrupt:
             self.send_packet("kStopContinuousMode")
             self.close()
         except Exception as e:
+            self.shared_memory_object.trax_data_valid.value = False
             print(f"INVALID TRAX DATA: {e}") # errors are expected

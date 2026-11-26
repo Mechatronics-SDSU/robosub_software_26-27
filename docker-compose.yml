@@ -1,0 +1,12 @@
+services:
+  robosub-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    environment:
+      PYTHONUNBUFFERED: "1"
+      ROBOSUB_ENABLE_ESKF: "0"
+    command: python -m pytest -q tests/unit

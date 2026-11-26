@@ -20,8 +20,9 @@ P_DEBUG = True #FIXME
 TIME_SLEEP = 0.2
 
 class PIDInterface:
-    def __init__(self, shared_memory_object, usb_object):
+    def __init__(self, shared_memory_object, usb_object, use_estimated_state: bool = False):
         self.shared_memory_object = shared_memory_object
+        self.use_estimated_state = use_estimated_state
         self.motor_wrapper = MotorWrapper(self.shared_memory_object, usb_object)
 
         # # array of PID k Values
@@ -60,14 +61,20 @@ class PIDInterface:
             self.shared_memory_object.target_pitch.value,
             self.shared_memory_object.target_roll.value
         ])
-        current_state = np.array([
-            self.shared_memory_object.dvl_x.value,
-            self.shared_memory_object.dvl_y.value,
-            self.shared_memory_object.dvl_z.value,
-            self.shared_memory_object.dvl_yaw.value,
-            self.shared_memory_object.dvl_pitch.value,
-            self.shared_memory_object.dvl_roll.value
-        ])
+        if self.use_estimated_state and self.shared_memory_object.estimated_state_valid.value:
+            with self.shared_memory_object.estimated_state_lock:
+                estimated_position = np.array(self.shared_memory_object.estimated_position[:])
+                estimated_orientation = np.array(self.shared_memory_object.estimated_orientation[:])
+            current_state = np.concatenate([estimated_position, estimated_orientation])
+        else:
+            current_state = np.array([
+                self.shared_memory_object.dvl_x.value,
+                self.shared_memory_object.dvl_y.value,
+                self.shared_memory_object.dvl_z.value,
+                self.shared_memory_object.dvl_yaw.value,
+                self.shared_memory_object.dvl_pitch.value,
+                self.shared_memory_object.dvl_roll.value
+            ])
         # Get the PID output: movement in robot's local frame
         untransformed = self.pid_object.update(current_state, desired_state)  # [x, y, z, yaw, pitch, roll]
 

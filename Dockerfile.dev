@@ -1,0 +1,28 @@
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /workspace
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        libglib2.0-0 \
+        libgl1 \
+        libgomp1 \
+        libusb-1.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY . /workspace
+
+# Install the same non-Orin and development dependencies used by the project.
+# The compose file bind-mounts the working tree at runtime, so edits remain
+# visible without rebuilding the image.
+RUN python -m pip install --upgrade pip \
+    && python -m pip install \
+        "scipy>=1.10,<2" \
+        -e ".[dev,non-orin]"
+
+CMD ["python", "-m", "pytest", "-q", "tests/unit"]
