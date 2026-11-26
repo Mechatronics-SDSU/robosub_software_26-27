@@ -117,8 +117,15 @@ def run_replay(samples: Iterable[SensorSample]) -> list[ReplayState]:
     initialized = False
     for sample in samples:
         if not initialized:
+            initial_position = np.zeros(3)
             if sample.dvl_position is not None:
-                estimator.initialize_position(sample.dvl_position)
+                initial_position[:2] = sample.dvl_position[:2]
+                initial_position[2] = sample.dvl_position[2]
+            if sample.depth_valid:
+                # Pressure depth is the authoritative initial vertical datum;
+                # DVL position is still useful for horizontal initialization.
+                initial_position[2] = sample.depth
+            estimator.initialize_position(initial_position)
             estimator.initialize_attitude(sample.attitude_zyx_degrees)
             initialized = True
         estimator.predict(sample.acceleration_body, sample.angular_velocity_body, sample.timestamp)

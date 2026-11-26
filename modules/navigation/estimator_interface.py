@@ -35,10 +35,13 @@ class EstimatorInterface:
         trax_timestamp = shm.trax_timestamp.value
         if trax_timestamp > self.last_trax_timestamp and shm.trax_data_valid.value:
             if not self.initialized:
+                initial_position = np.zeros(3)
                 if shm.dvl_pose_timestamp.value > 0:
-                    self.filter.initialize_position(np.array([
-                        shm.dvl_x.value, shm.dvl_y.value, shm.dvl_z.value
-                    ]))
+                    initial_position[:2] = [shm.dvl_x.value, shm.dvl_y.value]
+                    initial_position[2] = shm.dvl_z.value
+                if shm.depth_data_valid.value:
+                    initial_position[2] = shm.depth.value
+                self.filter.initialize_position(initial_position)
                 self.filter.initialize_attitude(np.array([
                     shm.trax_yaw.value, shm.trax_pitch.value, shm.trax_roll.value
                 ]))
