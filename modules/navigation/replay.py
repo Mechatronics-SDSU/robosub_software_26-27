@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import csv
+import json
 from pathlib import Path
 from typing import Iterable
 
@@ -33,6 +34,35 @@ class ReplayState:
     attitude_zyx_degrees: np.ndarray
     covariance_trace: float
     valid: bool
+
+
+@dataclass
+class ReplayMetrics:
+    sample_count: int
+    duration_seconds: float
+    valid_fraction: float
+    dvl_valid_fraction: float
+    depth_valid_fraction: float
+    final_position: list[float]
+    final_velocity: list[float]
+    max_covariance_trace: float
+    max_depth_residual: float
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "sample_count": self.sample_count,
+            "duration_seconds": self.duration_seconds,
+            "valid_fraction": self.valid_fraction,
+            "dvl_valid_fraction": self.dvl_valid_fraction,
+            "depth_valid_fraction": self.depth_valid_fraction,
+            "final_position": self.final_position,
+            "final_velocity": self.final_velocity,
+            "max_covariance_trace": self.max_covariance_trace,
+            "max_depth_residual": self.max_depth_residual,
+        }
+
+    def as_json(self) -> str:
+        return json.dumps(self.as_dict(), indent=2)
 
 
 CSV_FIELDS = [
@@ -107,6 +137,28 @@ def run_replay(samples: Iterable[SensorSample]) -> list[ReplayState]:
             valid=estimator.state.valid,
         ))
     return results
+
+
+def summarize_replay(samples: list[SensorSample], states: list[ReplayState]) -> ReplayMetrics:
+    """Calculate basic health and consistency metrics for a replay."""
+    if not samples or not states or len(samples) != len(states):
+        raise ValueError("Replay metrics require equally sized, non-empty samples and states")
+    depth_residuals = [
+        abs(state.position[2] - sample.depth)
+        for sample, state in zip(samples, states)
+        if sample.depth_valid
+    ]
+    return ReplayMetrics(
+        sample_count=len(states),
+        duration_seconds=max(0.0, samples[-1].timestamp - samples[0].timestamp),
+        valid_fraction=sum(state.valid for state in states) / len(states),
+        dvl_valid_fraction=sum(sample.dvl_velocity_valid for sample in samples) / len(samples),
+        depth_valid_fraction=sum(sample.depth_valid for sample in samples) / len(samples),
+        final_position=states[-1].position.tolist(),
+        final_velocity=states[-1].velocity.tolist(),
+        max_covariance_trace=max(state.covariance_trace for state in states),
+        max_depth_residual=max(depth_residuals, default=0.0),
+    )
 
 
 def write_states(path: str | Path, states: Iterable[ReplayState]) -> None:
