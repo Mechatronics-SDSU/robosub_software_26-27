@@ -57,6 +57,32 @@ This is the codebase for the SDSU Mechatronics Club competing in Robosub 2026, w
 - Run "python3 launch.py" to run the sub immediately
 - Run "stop" or "kill" to instantly kill the motors using an alias from the bashrc
 
+The experimental TRAX2-based ESKF is enabled with `ROBOSUB_ENABLE_ESKF=1`.
+It is disabled by default while sensor frames, timing, and pool logs are being
+validated. When enabled, the depth and TRAX2 interfaces start with the
+estimator, while raw DVL values remain available as the fallback path.
+
+### Docker Development Environment
+
+The software-only development container runs the hardware-independent tests
+without requiring the Orin, ZED, DVL, TRAX2, or motor controller:
+
+```bash
+docker compose build
+docker compose run --rm robosub-dev
+```
+
+The repository is mounted into the container, so source edits are available
+without rebuilding. To open a shell inside the environment:
+
+```bash
+docker compose run --rm robosub-dev bash
+```
+
+This container intentionally does not expose hardware devices. Hardware
+passthrough and the JetPack/ZED runtime should be added as a separate deployment
+configuration after the software estimator is validated with replay data.
+
 ### Notes
 
 - Modes: The process of completing a single objective in the pool

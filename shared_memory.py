@@ -1,4 +1,4 @@
-from multiprocessing import Value, Array
+from multiprocessing import Value, Array, Lock
 
 """
 discord: @kialli
@@ -29,7 +29,23 @@ class SharedMemoryWrapper:
         self.yolo_enable            = Value('b', False)
         self.gate_enable            = Value('b', False)
         self.current_color_index    = Value('i', 0)
+
         self.depth                  = Value('d', 0) 
+        # Sensor timestamps use time.monotonic() and are zero until valid data
+        # has been received.  These let the estimator reject stale samples.
+        self.trax_timestamp         = Value('d', 0)
+        self.dvl_velocity_timestamp = Value('d', 0)
+        self.dvl_pose_timestamp     = Value('d', 0)
+        self.depth_timestamp        = Value('d', 0)
+        self.trax_data_valid        = Value('b', False)
+        self.depth_data_valid       = Value('b', False)
+        self.estimated_state_lock   = Lock()
+        self.estimated_position     = Array('d', 3)
+        self.estimated_velocity     = Array('d', 3)
+        self.estimated_orientation  = Array('d', 3) # yaw, pitch, roll in degrees
+        self.estimated_state_timestamp = Value('d', 0)
+        self.estimated_state_valid  = Value('b', False)
+        self.estimated_covariance_trace = Value('d', 0)
         self.running                = Value('i', 1)
         self.x_hard_deadzone        = Value('i', 0) # TESTME
 

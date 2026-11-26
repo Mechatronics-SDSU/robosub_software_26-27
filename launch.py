@@ -1,4 +1,4 @@
-import subprocess, time
+import os, subprocess, time
 from multiprocessing                        import Process, Value
 
 # import FSMs
@@ -13,6 +13,9 @@ from fsm.test_signals_fsm                   import TestSignals_FSM
 #import modules
 from modules.pid.pid_interface              import PIDInterface
 from modules.sensors.a50_dvl.dvl_interface  import DVL_Interface
+from modules.sensors.depth_sensor.depth_sensor_interface import DepthSensorInterface
+from modules.sensors.trax2.trax_interface import Trax_Interface
+from modules.navigation.estimator_interface import EstimatorInterface
 from modules.vision.vision_main             import VisionDetection
 from modules.signals.SignalWrapper          import SignalWrapper
 
@@ -45,15 +48,25 @@ except OSError as e:
 # create shared memory object
 shared_memory_object = SharedMemoryWrapper()
 DELAY = 0 #s
+ENABLE_NAVIGATION_ESTIMATOR = os.getenv("ROBOSUB_ENABLE_ESKF", "0") == "1"
 
 # initialize objects
 usb_object = USB_Transmitter()  # Create a single USB_Transmitter instance to be shared
 pid_object = PIDInterface(shared_memory_object, usb_object)  # Pass the USB_Transmitter instance to PIDInterface
 dvl_object = DVL_Interface(shared_memory_object)
+depth_object = None
+trax_object = None
+estimator_object = None
 vis_object = VisionDetection(shared_memory_object)
 sig_object = SignalWrapper(usb_object)
 # initialize modes
 gate_modules = [pid_object, dvl_object]
+if ENABLE_NAVIGATION_ESTIMATOR:
+    depth_object = DepthSensorInterface(shared_memory_object)
+    trax_object = Trax_Interface(shared_memory_object)
+    estimator_object = EstimatorInterface(shared_memory_object)
+    pid_object.use_estimated_state = True
+    gate_modules.extend([depth_object, trax_object, estimator_object])
 gate_mode   = Gate_FSM(shared_memory_object, gate_modules)
 
 test_signals_modules = [sig_object, pid_object, dvl_object]
@@ -101,6 +114,7 @@ def stop():
     time.sleep(0.25)
     #usb_object.soft_kill()
     usb_object.kill_motors()
+
 
 def make_list(modes: list[FSM_Template]) -> None:
     """
