@@ -87,6 +87,8 @@ To replay recorded ESKF sensor data inside the container:
 
 ```bash
 docker compose run --rm robosub-dev \
+  python tools/generate_eskf_demo.py recordings/sensors.csv
+docker compose run --rm robosub-dev \
   python tools/replay_eskf.py recordings/sensors.csv recordings/estimated.csv
 ```
 
