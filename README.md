@@ -96,6 +96,17 @@ Replay input is CSV with timestamped TRAX2 acceleration/gyro/attitude, DVL
 velocity, depth, and optional DVL position columns. The output contains the
 estimated position, velocity, attitude, covariance trace, and validity flag.
 
+To record real sensors without starting motors, PID, vision, or mission logic:
+
+```bash
+docker compose run --rm robosub-dev \
+  python tools/log_eskf_sensors.py recordings/real_sensors.csv --duration 30
+```
+
+This hardware command requires the container to be given access to the DVL
+network and the TRAX2/depth serial devices. Keep the motor controller out of
+the container and verify the vehicle kill state before recording.
+
 ### Notes
 
 - Modes: The process of completing a single objective in the pool
