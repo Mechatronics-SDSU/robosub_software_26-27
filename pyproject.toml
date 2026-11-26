@@ -10,13 +10,13 @@ authors = [
     {name = "Andy Chen"}
 ]
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "yolov5==7.0.13",
     "ultralytics>=8.3,<9",
     "argparse==1.4.0",
     "inputs==0.5",
-    "python-can==3.3.3",
+    "python-can>=4.3,<5",
     "cffi==1.16.0",
     "onnx==1.16.1",
     "PyYAML==6.0",
