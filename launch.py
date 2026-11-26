@@ -8,12 +8,12 @@ from fsm.octagon_fsm                        import Octagon_FSM
 from fsm.slalom_fsm                         import Slalom_FSM
 from fsm.return_fsm                         import Return_FSM
 from fsm.fsm                                import FSM_Template
-from fsm.test_signals_fsm                   import TestSignals_FSM
+from tests.hardware.test_signals_fsm        import TestSignals_FSM
 
 #import modules
 from modules.pid.pid_interface              import PIDInterface
 from modules.sensors.a50_dvl.dvl_interface  import DVL_Interface
-from modules.vision.vision_main             import VisionDetection
+from modules.vision.vision_worker           import VisionWorker
 from modules.signals.SignalWrapper          import SignalWrapper
 
 #kill module
@@ -50,7 +50,7 @@ DELAY = 0 #s
 usb_object = USB_Transmitter()  # Create a single USB_Transmitter instance to be shared
 pid_object = PIDInterface(shared_memory_object, usb_object)  # Pass the USB_Transmitter instance to PIDInterface
 dvl_object = DVL_Interface(shared_memory_object)
-vis_object = VisionDetection(shared_memory_object)
+vis_object = VisionWorker(shared_memory_object)
 sig_object = SignalWrapper(usb_object)
 # initialize modes
 gate_modules = [pid_object, dvl_object]
@@ -73,11 +73,18 @@ def main():
     # make linked list of modes
     make_list(mode_list) #type: ignore
     
+    # Keep vision independent of the FSM process list so it survives mode changes.
+    vision_process = Process(target=vis_object.run_loop, name="vision-worker")
+    vision_process.start()
+
     # start initial mode
     mode = mode_list[0] # mode pointer
     mode.start()
     # loop
-    main_loop(mode)
+    try:
+        main_loop(mode)
+    finally:
+        stop_vision(vision_process)
 
 def main_loop(mode: FSM_Template | None) -> None:
     """
@@ -101,6 +108,13 @@ def stop():
     time.sleep(0.25)
     #usb_object.soft_kill()
     usb_object.kill_motors()
+
+
+def stop_vision(process: Process) -> None:
+    """Stop the camera/model worker after the mission loop exits."""
+    if process.is_alive():
+        process.terminate()
+    process.join(timeout=2)
 
 def make_list(modes: list[FSM_Template]) -> None:
     """

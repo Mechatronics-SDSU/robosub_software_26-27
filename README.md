@@ -12,19 +12,8 @@ This is the codebase for the SDSU Mechatronics Club competing in Robosub 2026, w
     - Joe Lofrese (GitHub: @Joelofrese, Discord: @croppie_luvr)
     - Juan Cota (GitHub: @Juanlo01, Discord: @chewchew0366)
     - Malaika Joiner (GitHub: @malaikajoiner, Discord: @314piekitty)
-- Dependencies:
-    - Python 3.11+
-    - Yolov5 7.0.13
-    - Argparse 1.4.0
-    - Inputs 0.5
-    - Python-can 3.3.3
-    - cffi 1.16.0
-    - onnx 1.16.1
-    - PyYAML 6.0
-    - Pyserial 3.5
-    - Matplotlib 3.7.2
-    - Zed SDK
-    - NVIDIA Orin SDK
+- Python: 3.11 or newer
+- Hardware integrations: ZED SDK and the NVIDIA JetPack/Orin environment are needed for deployment features that use those devices.
 
 ### Key Directories
 
@@ -52,10 +41,59 @@ This is the codebase for the SDSU Mechatronics Club competing in Robosub 2026, w
 
 ### Usage
 
+### Installation
+
+Create and activate a virtual environment from the repository root:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+```
+
+On a development computer that is not an Orin, install the project and its
+non-Orin vision dependencies:
+
+```bash
+python -m pip install -e '.[non-orin]'
+```
+
+On an Orin, install the JetPack and ZED SDK versions supported by the vehicle
+image, then install compatible PyTorch/torchvision builds and the project:
+
+```bash
+python -m pip install -e .
+```
+
+Do not install the `non-orin` extra on the Orin; it pins generic PyTorch wheels
+that may not match the device image.
+
 - Edit the objects.yaml config file to choose what course to follow and target locations, read comments (IMPORTANT)
 - Run "python3 btn_press.py" to run the sub after the green button is pressed
 - Run "python3 launch.py" to run the sub immediately
 - Run "stop" or "kill" to instantly kill the motors using an alias from the bashrc
+
+The launch process runs vision in a separate worker that publishes detections
+to `SharedMemoryWrapper`. `vision_detection_count` gives the number of
+detections; matching indexes in the `vision_*` arrays hold class ID,
+confidence, normalized box center and size, and depth. The configurable target
+tracker publishes a confirmed, smoothed detection through `vision_target_*`.
+It reports image center alignment but does not steer or fire. Target-specific
+aim offsets remain to be calibrated for the torpedo board.
+
+### Development Tests
+
+Install the development tools in the active virtual environment:
+
+```bash
+python -m pip install -e '.[dev]'
+```
+
+Run the hardware-independent unit tests from the repository root:
+
+```bash
+python -m pytest tests/unit
+```
 
 ### Notes
 

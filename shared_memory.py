@@ -1,4 +1,4 @@
-from multiprocessing import Value, Array
+from multiprocessing import Value, Array, Lock
 
 """
 discord: @kialli
@@ -29,6 +29,25 @@ class SharedMemoryWrapper:
         self.yolo_enable            = Value('b', False)
         self.gate_enable            = Value('b', False)
         self.current_color_index    = Value('i', 0)
+
+        # Latest YOLO detections. Each index in these arrays is one detection;
+        # vision_detection_count is the number of populated entries.
+        self.vision_lock            = Lock()
+        self.vision_detection_count = Value('i', 0)
+        self.vision_class_id        = Array('i', 4)
+        self.vision_confidence      = Array('d', 4)
+        self.vision_x               = Array('d', 4)
+        self.vision_y               = Array('d', 4)
+        self.vision_width           = Array('d', 4)
+        self.vision_height          = Array('d', 4)
+        self.vision_depth           = Array('d', 4)
+        self.vision_target_valid    = Value('b', False)
+        self.vision_target_class_id = Value('i', -1)
+        self.vision_target_confidence = Value('d', 0)
+        self.vision_target_x        = Value('d', 0)
+        self.vision_target_y        = Value('d', 0)
+        self.vision_target_depth    = Value('d', -1)
+        self.vision_target_centered = Value('b', False)
         self.depth                  = Value('d', 0) 
         self.running                = Value('i', 1)
         self.x_hard_deadzone        = Value('i', 0) # TESTME

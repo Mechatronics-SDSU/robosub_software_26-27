@@ -54,6 +54,21 @@ model:
 # To only select a few classes e.g. (blood & fire) input [1, 3]
 classes: [0, 1, 2, 3]
 
+## Target selection
+# The worker only publishes a confirmed target; it does not steer or fire.
+targeting:
+  enabled: true
+  # One of the class labels listed above (case-insensitive).
+  target_class: fire
+  min_confidence: 0.70
+  # Require this many consecutive matching frames before publishing a target.
+  stable_frames: 4
+  # Exponential smoothing factor for normalized center/size and depth (0, 1].
+  smoothing_alpha: 0.35
+  # Image-center tolerance; 0.05 means within 5% of image center on each axis.
+  center_tolerance_x: 0.05
+  center_tolerance_y: 0.05
+
 ## Ultralytics' YOLO
 yolo:
   # confidence threshold : detections below this are discarded

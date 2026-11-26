@@ -28,6 +28,9 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [project.optional-dependencies]
+dev = [
+    "pytest>=8,<9",
+]
 docs = [
     "pdoc3==0.11.1",
 ]
