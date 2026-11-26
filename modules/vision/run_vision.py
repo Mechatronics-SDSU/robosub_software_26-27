@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 import time
-from multiprocessing import Process
+from multiprocessing import Event, Process
 from pathlib import Path
 
 from modules.vision.vision_worker import DEFAULT_CONFIG, VisionWorker
@@ -22,13 +22,18 @@ def main() -> None:
     args = parser.parse_args()
 
     shared = SharedMemoryWrapper()
-    worker = VisionWorker(shared, config_path=args.config)
+    ready_event = Event()
+    worker = VisionWorker(shared, config_path=args.config, ready_event=ready_event)
     process = Process(target=worker.run_loop, name="vision-worker")
     process.start()
-    print("Vision-only mode running; press Ctrl+C to stop. No mission or motor loop is started.", flush=True)
+    print("Vision-only mode starting; press Ctrl+C to stop. No mission or motor loop is started.", flush=True)
 
     try:
         while process.is_alive():
+            if not ready_event.is_set():
+                time.sleep(0.2)
+                continue
+
             with shared.vision_lock:
                 count = int(shared.vision_detection_count.value)
                 target_valid = bool(shared.vision_target_valid.value)
@@ -57,6 +62,8 @@ def main() -> None:
         if process.is_alive():
             process.terminate()
             process.join()
+        if not ready_event.is_set() and process.exitcode == 0:
+            print("Vision worker exited before camera/model initialization completed.", flush=True)
 
 
 if __name__ == "__main__":

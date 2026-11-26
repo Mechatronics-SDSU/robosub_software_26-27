@@ -18,9 +18,10 @@ class VisionWorker:
     """Publish frame detections and a confirmed configured target."""
 
     def __init__(self, shared_memory_object: SharedMemoryWrapper,
-                 config_path: Path | str = DEFAULT_CONFIG):
+                 config_path: Path | str = DEFAULT_CONFIG, ready_event=None):
         self.shared_memory_object = shared_memory_object
         self.config_path = Path(config_path)
+        self.ready_event = ready_event
 
     def _load_config(self) -> dict:
         with self.config_path.open("r", encoding="utf-8") as config_file:
@@ -130,6 +131,9 @@ class VisionWorker:
             else:
                 self._center_tolerance_x = self._center_tolerance_y = 0.05
 
+            if self.ready_event is not None:
+                self.ready_event.set()
+
             classes = config.get("classes")
             while self.shared_memory_object.running.value:
                 detections = model.infer(cam, headless=True, classes=classes)
@@ -141,6 +145,8 @@ class VisionWorker:
             self._publish_target(None)
             print(f"Vision worker stopped: {exc}", flush=True)
         finally:
+            if self.ready_event is not None:
+                self.ready_event.clear()
             if cam is not None:
                 cam.close()
             self._publish({})

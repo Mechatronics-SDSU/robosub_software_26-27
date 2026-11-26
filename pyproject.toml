@@ -14,6 +14,7 @@ requires-python = ">=3.10"
 dependencies = [
     "yolov5==7.0.13",
     "ultralytics>=8.3,<9",
+    "numpy>=1.23,<1.25; python_version < '3.11'",
     "argparse==1.4.0",
     "inputs==0.5",
     "python-can>=4.3,<5",
