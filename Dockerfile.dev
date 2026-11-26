@@ -2,7 +2,8 @@ FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONPATH=/workspace
 
 WORKDIR /workspace
 
@@ -17,12 +18,25 @@ RUN apt-get update \
 
 COPY . /workspace
 
-# Install the same non-Orin and development dependencies used by the project.
-# The compose file bind-mounts the working tree at runtime, so edits remain
-# visible without rebuilding the image.
+# The repository is a script/module layout rather than an installable package
+# directory, so install its declared dependencies directly instead of running
+# pip install -e . . The compose file bind-mounts the working tree at runtime.
 RUN python -m pip install --upgrade pip \
     && python -m pip install \
+        "yolov5==7.0.13" \
+        "argparse==1.4.0" \
+        "inputs==0.5" \
+        "python-can==3.3.3" \
+        "cffi==1.16.0" \
+        "onnx==1.16.1" \
+        "PyYAML==6.0" \
+        "pyserial==3.5" \
+        "matplotlib==3.7.2" \
+        "numpy==1.24.3" \
+        "torch==2.4.1" \
+        "torchvision==0.19.1" \
         "scipy>=1.10,<2" \
-        -e ".[dev,non-orin]"
+        "opencv-python==4.9.0.80" \
+        "pytest>=8,<9"
 
 CMD ["python", "-m", "pytest", "-q", "tests/unit"]
