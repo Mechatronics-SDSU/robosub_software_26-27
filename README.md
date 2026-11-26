@@ -81,6 +81,15 @@ tracker publishes a confirmed, smoothed detection through `vision_target_*`.
 It reports image center alignment but does not steer or fire. Target-specific
 aim offsets remain to be calibrated for the torpedo board.
 
+Vision model weights are machine-specific and are not stored in Git. Put the
+selected YOLO weights at `modules/vision/models/best.pt`, or edit
+`modules/vision/config.yaml` to point `model.weights` at another local file.
+After installing the Orin's JetPack-compatible PyTorch/torchvision and ZED SDK,
+run `python -m modules.vision.run_vision` from the repository root to check
+camera and inference without starting the mission or motor loop. The config's
+default source is ZED; set `source: webcam` for a USB-camera check without
+depth.
+
 ### Development Tests
 
 Install the development tools in the active virtual environment:

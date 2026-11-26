@@ -13,6 +13,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "yolov5==7.0.13",
+    "ultralytics>=8.3,<9",
     "argparse==1.4.0",
     "inputs==0.5",
     "python-can==3.3.3",

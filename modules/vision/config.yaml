@@ -38,7 +38,8 @@ recording:
 
 ## Model
 model:
-  weights: /home/mechatronics/robosub_software_2026/modules/vision/models/best.pt
+  # Place the selected weights at modules/vision/models/best.pt (model files are git-ignored).
+  weights: models/best.pt
   # null = auto-detect (cuda:0 → mps → cpu)
   # cuda: best option if available
   # cpu:  default option when nothing else works
